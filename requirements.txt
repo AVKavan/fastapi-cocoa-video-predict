@@ -3,3 +3,4 @@
 fastapi==0.110.1
 roboflow==1.1.26
 uvicorn
+python-multipart
