@@ -8,23 +8,22 @@ project = rf.workspace().project("blackpod_cocoa")
 model = project.version("2").model
 
 @app.post("/predict_video/")
-async def predict_video(video_file: UploadFile = File(...)):
+async def predict_video(file: UploadFile = File(...)):
+    # Save the uploaded video file
+    with open("uploaded_video.mp4", "wb") as buffer:
+        buffer.write(await file.read())
 
-        # Save the uploaded video file
-        with open("uploaded_video.mp4", "wb") as buffer:
-         buffer.write(await video_file.read())
-        
-        # Predict on the uploaded video file
-        job_id, signed_url, expire_time = model.predict_video(
-            "uploaded_video.mp4",
-            fps=5,
-            prediction_type="batch-video"
-        )
-        
-        # Poll until the prediction job is completed
-        results = model.poll_until_video_results(job_id)
-        
-        # Return the prediction results
-        return {"results": results}
-    
-   
+    # Perform prediction on the uploaded video
+    job_id, signed_url, expire_time = model.predict_video(
+        "uploaded_video.mp4",
+        fps=5,
+        prediction_type="batch-video",
+    )
+
+    # Poll until results are ready
+    results = model.poll_until_video_results(job_id)
+
+    if not results:
+        raise HTTPException(status_code=404, detail="Video prediction results not found")
+
+    return results
